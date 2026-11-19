@@ -5,13 +5,26 @@ dashboard. Owner's goal: weight loss, about 1,550 kcal/day.
 
 ## Stack
 - Frontend: plain HTML/CSS/JS in `public/` (no framework, no build step).
-- API: Cloudflare Pages Functions in `functions/api/`.
+- API: route handlers in `functions/api/*` (Pages-Functions style:
+  `onRequestGet/Post/Delete(context)`), served by a thin Worker at
+  `src/worker.js` that routes `/api/*` to them.
+- Hosting: **Cloudflare Workers + Static Assets** (not Pages). `public/` is
+  served as assets; anything that isn't a static file falls through to the
+  Worker. Deploy command: `npx wrangler deploy`. Auto-deploys on push to `main`.
 - Database: Cloudflare D1 (SQLite), binding `DB`, database name `health-db`.
-- Hosting: Cloudflare Pages, auto-deploys on push to `main`.
+  The binding is declared in `wrangler.toml` and applied automatically on
+  deploy — no dashboard binding step needed.
 - Auth: Cloudflare Access (configured in the Cloudflare dashboard, not in code).
+
+Note: the dashboard merged Pages into Workers, and the git-connect flow only
+offered the Workers builder (which runs `wrangler deploy`). `wrangler pages
+deploy` failed there with an auth error because the build token is Workers-
+scoped. Hence the Workers + Static Assets model above.
 
 ## Layout
 ```
+src/
+  worker.js         Worker entry: serves assets + routes /api/* to functions/api/*
 public/
   index.html        shell: loads style.css + app.js, links manifest
   style.css         all styles (design + entry-form styles)
@@ -51,9 +64,15 @@ Array of:
 ## Local dev
 ```
 npx wrangler d1 execute health-db --local --file=db/schema.sql
-npx wrangler pages dev public
+npx wrangler dev          # serves public/ + runs src/worker.js on :8787
 ```
-Local D1 is a separate SQLite store; it does not need a real `database_id`.
+Local D1 is a separate SQLite store; `wrangler dev` and `wrangler pages dev`
+use different local stores, so re-run the `--local` schema after switching.
+
+## Deploy
+- Push to `main`; Cloudflare Workers build runs `npx wrangler deploy`.
+- Remote schema (run once, and after schema changes):
+  `npx wrangler d1 execute health-db --remote --file=db/schema.sql`
 
 ## Do not
 - Add frameworks or a build step.

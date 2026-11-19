@@ -1,6 +1,11 @@
 name = "health-tracker"
-pages_build_output_dir = "public"
+main = "src/worker.js"
 compatibility_date = "2026-11-01"
+
+# Serve the static site from public/. Requests that don't match a static file
+# (e.g. /api/*) fall through to the Worker in src/worker.js.
+[assets]
+directory = "./public"
 
 [[d1_databases]]
 binding = "DB"
