@@ -34,5 +34,9 @@ CREATE TABLE IF NOT EXISTS meal_items (
   kcal INTEGER,
   protein REAL
 );
+CREATE TABLE IF NOT EXISTS profile (
+  id INTEGER PRIMARY KEY CHECK (id = 1),  -- single row
+  data TEXT                               -- JSON of plan/profile values
+);
 CREATE INDEX IF NOT EXISTS idx_events_day ON events(day_id);
 CREATE INDEX IF NOT EXISTS idx_meals_day ON meals(day_id);

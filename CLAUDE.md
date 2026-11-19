@@ -40,6 +40,13 @@ functions/api/
   walk.js     POST   { day_id, km, kcal }
   day.js      POST   { day_id, done?, note? }   also creates today's page
   event.js    DELETE { id } | { meal_id } | { day_id, note_index }
+  profile.js  GET    stored plan/profile JSON ({} if unset)
+              POST   replaces it with the posted object
+db/schema.sql also has a single-row `profile` table (id=1, data=JSON).
+The plan/profile (calorie/protein/water/sleep/walk targets, meal plan, weight
+goal, BMR breakdown) is edited on the Plan & Profile page and stored here.
+Defaults live in app.js `DEFAULTS`; `applyProfile()` derives T/MIN/MAX/PT/PTH/
+WT/GL/PLAN from the loaded profile.
 db/schema.sql
 wrangler.toml       database_id must be pasted in (not committed as a real secret, but keep it here only)
 ```

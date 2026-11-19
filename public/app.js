@@ -2,7 +2,28 @@
    Data now comes from the API (GET /api/days). The render functions
    (overview, dayView, plan) keep the original design. */
 
-var PLAN={Breakfast:450,Lunch:550,Snack:150,Dinner:400},T=1550,MIN=1500,MAX=1600,PT=90,WT=2500,GL=250;
+// Plan / profile defaults (from the Health and Calorie Plan sheet). The DB
+// stores overrides; anything missing falls back to these.
+var DEFAULTS={
+  age:33,weightLow:66,weightHigh:70,height:163,job:"Software engineer (desk work)",
+  startWeight:68,goalWeight:63,healthyLow:59,healthyHigh:64,
+  bmr:1540,activity:310,rides:40,femaleAdj:170,
+  calorieTarget:1550,calorieMin:1500,calorieMax:1600,
+  proteinLow:90,proteinHigh:100,waterL:2.5,glassMl:250,
+  sleepLow:7,sleepHigh:8,walkKm:2,
+  planBreakfast:450,planLunch:550,planSnack:150,planDinner:400,
+  deficit:340,lossPerWeek:0.31,energyPerKg:7700
+};
+var P=Object.assign({},DEFAULTS);
+// Derived globals the render code uses; refreshed by applyProfile().
+var PLAN={},T,MIN,MAX,PT,PTH,WT,GL;
+function applyProfile(){
+  T=P.calorieTarget;MIN=P.calorieMin;MAX=P.calorieMax;
+  PT=P.proteinLow;PTH=P.proteinHigh;
+  WT=P.waterL*1000;GL=P.glassMl;
+  PLAN={Breakfast:P.planBreakfast,Lunch:P.planLunch,Snack:P.planSnack,Dinner:P.planDinner};
+}
+applyProfile();
 var DAYS=[];
 
 var $=function(s){return document.querySelector(s)},
@@ -32,6 +53,13 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return
 async function load(){
   try{ DAYS=await (await fetch("/api/days")).json(); if(!Array.isArray(DAYS))DAYS=[]; }
   catch(e){ console.error("Failed to load days",e); DAYS=[]; }
+}
+async function loadProfile(){
+  try{
+    var d=await (await fetch("/api/profile")).json();
+    if(d&&typeof d==="object"&&!Array.isArray(d))P=Object.assign({},DEFAULTS,d);
+    applyProfile();
+  }catch(e){ console.error("Failed to load profile",e); }
 }
 async function send(path,method,bodyObj){
   var r=await fetch("/api/"+path,{method:method,headers:{"content-type":"application/json"},body:JSON.stringify(bodyObj)});
@@ -234,12 +262,12 @@ function dayView(d){
   var k=kc(d),p=pr(d),w=ml(d),s=st(d,k),diff=k-T,h='';
   h+='<div class="hd"><h2>'+esc(d.full)+'</h2><span class="pill '+s[1]+'">'+s[0]+'</span></div>';
   h+=addBar(d);
-  h+='<div class="grid">'+tile("Calories eaten",N(k),d.meals.length?(diff>0?N(diff)+" over the "+N(T)+" target":N(-diff)+" left to "+N(T)):"Nothing logged yet",k>MAX?"warn":"")+tile("Protein",F(p)+" g",p>=PT?"Target of 90-100 g reached":F(PT-p)+" g to reach 90 g")+tile("Water",F(w/GL),F(w/1000)+" litres of 2.5, in glasses of 250 ml","sky")+tile("Sleep before",F(d.sleep.h)+" h","Goal 7-8 h",d.sleep.h<7?"warn":"leaf")+tile("Walk",d.walk?d.walk.km+" km":"None yet",d.walk?"About "+d.walk.kcal+" kcal burned":"Goal: 2 km a day")+'</div>';
+  h+='<div class="grid">'+tile("Calories eaten",N(k),d.meals.length?(diff>0?N(diff)+" over the "+N(T)+" target":N(-diff)+" left to "+N(T)):"Nothing logged yet",k>MAX?"warn":"")+tile("Protein",F(p)+" g",p>=PT?"Target of "+F(PT)+"-"+F(PTH)+" g reached":F(PT-p)+" g to reach "+F(PT)+" g")+tile("Water",F(w/GL),F(w/1000)+" litres of "+F(P.waterL)+", in glasses of "+N(GL)+" ml","sky")+tile("Sleep before",F(d.sleep.h)+" h","Goal "+F(P.sleepLow)+"-"+F(P.sleepHigh)+" h",d.sleep.h<P.sleepLow?"warn":"leaf")+tile("Walk",d.walk?d.walk.km+" km":"None yet",d.walk?"About "+d.walk.kcal+" kcal burned":"Goal: "+F(P.walkKm)+" km a day")+'</div>';
   h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Calories</h3>'+ring(k)+'<div class="lab" style="text-align:center;margin-top:8px">Range '+N(MIN)+'-'+N(MAX)+' kcal</div></div>';
   h+='<div class="card"><h3>Meals vs plan</h3><div class="lab">Planned kcal. Line = plan for that meal.</div>';
   Object.keys(PLAN).forEach(function(s2){var a=slotKc(d,s2);h+=row(s2,a,700,a>PLAN[s2]?"var(--warn)":"var(--leaf)",PLAN[s2],N(a)+" / "+PLAN[s2])});
-  h+='<div class="lab" style="margin-top:10px">Protein '+F(p)+' g of 90-100 g</div>'+bar(p,110,"var(--sun)",PT)+'</div></div>';
-  h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Water</h3><div class="lab">'+F(w/GL)+' glasses, '+N(w)+' ml. Target 10 glasses.</div>'+glasses(w)+'</div><div class="card"><h3>Sleep before this day</h3><div class="lab">'+esc(d.sleep.txt)+'</div>'+row("Hours",d.sleep.h,10,d.sleep.h<7?"var(--warn)":"var(--leaf)",null,F(d.sleep.h)+" h",[7,8])+'<div class="lab">Shaded zone is the 7-8 hour goal.</div></div></div>';
+  h+='<div class="lab" style="margin-top:10px">Protein '+F(p)+' g of '+F(PT)+'-'+F(PTH)+' g</div>'+bar(p,PTH+10,"var(--sun)",PT)+'</div></div>';
+  h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Water</h3><div class="lab">'+F(w/GL)+' glasses, '+N(w)+' ml. Target '+N(Math.round(WT/GL))+' glasses.</div>'+glasses(w)+'</div><div class="card"><h3>Sleep before this day</h3><div class="lab">'+esc(d.sleep.txt)+'</div>'+row("Hours",d.sleep.h,10,d.sleep.h<P.sleepLow?"var(--warn)":"var(--leaf)",null,F(d.sleep.h)+" h",[P.sleepLow,P.sleepHigh])+'<div class="lab">Shaded zone is the '+F(P.sleepLow)+'-'+F(P.sleepHigh)+' hour goal.</div></div></div>';
   h+='<h2>Meals in detail</h2>';
   if(!d.meals.length)h+='<div class="card lab">No meals logged yet. Use "+ Meal" above.</div>';
   d.meals.forEach(function(m){var t=m.items.reduce(function(a,i){return a+i[2]},0);
@@ -272,25 +300,26 @@ function overview(){
   }
   var dn=DAYS.filter(function(d){return d.done}),av=function(f){return dn.length?dn.reduce(function(a,d){return a+f(d)},0)/dn.length:0},h='';
   var sl=DAYS.length?DAYS.reduce(function(a,d){return a+d.sleep.h},0)/DAYS.length:0,inr=dn.filter(function(d){var k=kc(d);return k>=MIN&&k<=MAX}).length;
-  h+='<div class="hd"><h2>Super dashboard</h2><button class="btn sm" onclick="newDay()">+ New day</button></div><p class="sub">Every logged day side by side. Averages use finished days only; sleep uses every night logged.</p><div class="grid">'+tile("Days logged",DAYS.length,dn.length+" finished, "+(DAYS.length-dn.length)+" in progress")+tile("Average calories",N(av(kc)),"kcal a day against "+N(T),av(kc)>MAX?"warn":"leaf")+tile("Average protein",F(av(pr))+" g","Goal 90-100 g")+tile("Average water",F(av(ml)/1000)+" L","Goal 2.5 L","sky")+tile("Average sleep",F(sl)+" h","Goal 7-8 h")+tile("Days in calorie range",inr+" of "+dn.length,N(MIN)+"-"+N(MAX)+" kcal")+'</div>';
+  h+='<div class="hd"><h2>Super dashboard</h2><button class="btn sm" onclick="newDay()">+ New day</button></div><p class="sub">Every logged day side by side. Averages use finished days only; sleep uses every night logged.</p><div class="grid">'+tile("Days logged",DAYS.length,dn.length+" finished, "+(DAYS.length-dn.length)+" in progress")+tile("Average calories",N(av(kc)),"kcal a day against "+N(T),av(kc)>MAX?"warn":"leaf")+tile("Average protein",F(av(pr))+" g","Goal "+F(PT)+"-"+F(PTH)+" g")+tile("Average water",F(av(ml)/1000)+" L","Goal "+F(P.waterL)+" L","sky")+tile("Average sleep",F(sl)+" h","Goal "+F(P.sleepLow)+"-"+F(P.sleepHigh)+" h")+tile("Days in calorie range",inr+" of "+dn.length,N(MIN)+"-"+N(MAX)+" kcal")+'</div>';
   h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Calories a day</h3><div class="lab">Line = '+N(T)+' target</div>';
   DAYS.forEach(function(d){var k=kc(d);h+=row(d.label,k,2600,k>MAX?"var(--warn)":"var(--leaf)",T,d.meals.length?N(k):"-")});
-  h+='</div><div class="card"><h3>Protein a day</h3><div class="lab">Line = 90 g</div>';
+  h+='</div><div class="card"><h3>Protein a day</h3><div class="lab">Line = '+F(PT)+' g</div>';
   DAYS.forEach(function(d){var p=pr(d);h+=row(d.label,p,120,"var(--sun)",PT,d.meals.length?F(p)+" g":"-")});
-  h+='</div><div class="card"><h3>Water a day</h3><div class="lab">Line = 2.5 L</div>';
+  h+='</div><div class="card"><h3>Water a day</h3><div class="lab">Line = '+F(P.waterL)+' L</div>';
   DAYS.forEach(function(d){var w=ml(d);h+=row(d.label,w,4000,"var(--sky)",WT,F(w/1000)+" L")});
-  h+='</div><div class="card"><h3>Sleep before each day</h3><div class="lab">Shaded = 7-8 h</div>';
-  DAYS.forEach(function(d){h+=row(d.label,d.sleep.h,10,d.sleep.h<7?"var(--warn)":"var(--leaf)",null,F(d.sleep.h)+" h",[7,8])});
+  h+='</div><div class="card"><h3>Sleep before each day</h3><div class="lab">Shaded = '+F(P.sleepLow)+'-'+F(P.sleepHigh)+' h</div>';
+  DAYS.forEach(function(d){h+=row(d.label,d.sleep.h,10,d.sleep.h<P.sleepLow?"var(--warn)":"var(--leaf)",null,F(d.sleep.h)+" h",[P.sleepLow,P.sleepHigh])});
   h+='</div></div><h2>All days at a glance</h2><div class="card tb"><table><tr><th>Day</th><th>kcal</th><th>vs target</th><th>Protein</th><th>Water</th><th>Sleep</th><th>Walk</th><th>Status</th></tr>';
   DAYS.forEach(function(d){var k=kc(d),s=st(d,k);h+='<tr><td><a href="#day-'+d.id+'" style="color:var(--leaf);font-weight:700">'+d.label+'</a></td><td>'+(d.meals.length?N(k):"-")+'</td><td>'+(d.meals.length?(k-T>0?"+":"")+N(k-T):"-")+'</td><td>'+(d.meals.length?F(pr(d))+" g":"-")+'</td><td>'+F(ml(d)/1000)+' L</td><td>'+F(d.sleep.h)+' h</td><td>'+(d.walk?d.walk.km+" km":"-")+'</td><td><span class="pill '+s[1]+'">'+s[0]+'</span></td></tr>'});
   h+='</table></div>';
   // Weight goal + dynamic insights
   var avK=av(kc),avP=av(pr),avW=av(ml)/1000;
-  h+='<h2>Weight goal</h2><div class="g2"><div class="card"><h3>68 kg to about 63 kg</h3><div class="lab">Healthy range 59-64 kg. About 5 kg to lose at the expected 0.31 kg a week (about 16 weeks). No weigh-ins have been logged yet, so 68 kg is the average of your 66-70 kg range.</div>'+bar(2,100,"var(--leaf)",null,[80,100])+'</div><div class="card"><h3>What the logged days show</h3><ul class="c">';
+  var toLose=P.startWeight-P.goalWeight,weeks=P.lossPerWeek>0?Math.round(toLose/P.lossPerWeek):0;
+  h+='<h2>Weight goal</h2><div class="g2"><div class="card"><h3>'+F(P.startWeight)+' kg to about '+F(P.goalWeight)+' kg</h3><div class="lab">Healthy range '+F(P.healthyLow)+'-'+F(P.healthyHigh)+' kg. About '+F(toLose)+' kg to lose at the expected '+F(P.lossPerWeek)+' kg a week (about '+weeks+' weeks). No weigh-ins logged yet, so '+F(P.startWeight)+' kg is the average of your '+F(P.weightLow)+'-'+F(P.weightHigh)+' kg range.</div>'+bar(2,100,"var(--leaf)",null,[80,100])+'</div><div class="card"><h3>What the logged days show</h3><ul class="c">';
   if(dn.length){
     h+='<li>Average calories '+N(avK)+' kcal, '+(avK>T?N(avK-T)+' over':N(T-avK)+' under')+' the '+N(T)+' target.</li>';
-    h+='<li>Average protein '+F(avP)+' g ('+(avP>=PT?'meeting':'below')+' the 90 g goal).</li>';
-    h+='<li>Average water '+F(avW)+' L ('+(avW>=2.5?'at or above':'below')+' the 2.5 L goal).</li>';
+    h+='<li>Average protein '+F(avP)+' g ('+(avP>=PT?'meeting':'below')+' the '+F(PT)+' g goal).</li>';
+    h+='<li>Average water '+F(avW)+' L ('+(avW>=P.waterL?'at or above':'below')+' the '+F(P.waterL)+' L goal).</li>';
     h+='<li>'+inr+' of '+dn.length+' finished days landed in the '+N(MIN)+'-'+N(MAX)+' kcal range.</li>';
   }else{
     h+='<li>No finished days yet. Mark a day done once it is complete to see averages here.</li>';
@@ -299,13 +328,49 @@ function overview(){
   return h;
 }
 
-/* ---------- plan (unchanged) ---------- */
-function plan(){return'<h2>Profile and plan</h2><div class="grid"><div class="card"><div class="lab">Age</div><div class="big">33</div></div><div class="card"><div class="lab">Weight</div><div class="big">66-70 kg</div><div class="lab">Average 68 kg</div></div><div class="card"><div class="lab">Height</div><div class="big">163 cm</div><div class="lab">About 5 ft 4 in</div></div><div class="card"><div class="lab">Job</div><div class="big" style="font-size:22px">Software engineer</div><div class="lab">Mostly desk work</div></div><div class="card"><div class="lab">Goal</div><div class="big">About 63 kg</div><div class="lab">Healthy range 59-64 kg, about 3 months</div></div></div>'+
-  '<h2>Calories burned</h2><div class="stack" role="img" aria-label="Resting 1,540, activity 310, rides 40"><div style="width:81.5%;background:var(--leaf)">Resting 1,540</div><div style="width:16.4%;background:var(--sky)">310</div><div style="width:2.1%;background:var(--sun)"></div></div><p class="sub">Maintenance is about 1,890 kcal (resting BMR 1,540, daily activity 310, rides 40). That assumes a male body. For a female body, subtract about 170 kcal, which gives about 1,720.</p><div class="note">The routine says the commute is by bike, but the calorie table says motorbike. A 40 kcal figure only fits a motorbike. Four bicycle trips of 1.5 km (6 km in total) would burn more.</div>'+
-  '<h2>The plan</h2><div class="grid"><div class="card"><div class="lab">Calories</div><div class="big">1,550</div><div class="lab">Range 1,500-1,600. Never below 1,500.</div></div><div class="card"><div class="lab">Deficit</div><div class="big">About 340</div><div class="lab">kcal a day (file estimate 350-400)</div></div><div class="card"><div class="lab">Loss a week</div><div class="big">0.31 kg</div><div class="lab">File estimate 0.35-0.4 kg</div></div><div class="card"><div class="lab">Protein</div><div class="big">90-100 g</div></div><div class="card"><div class="lab">Water</div><div class="big">2.5 L</div><div class="lab">10 glasses of 250 ml. 2.5-3 L on hot days.</div></div><div class="card"><div class="lab">Sleep</div><div class="big">7-8 h</div><div class="lab">Lights out 9-10 pm</div></div></div>'+
-  '<h2>Meal plan</h2><div class="card">'+row("Breakfast",450,600,"var(--leaf)",null,"450")+row("Lunch",550,600,"var(--leaf)",null,"550")+row("Evening snack",150,600,"var(--leaf)",null,"150")+row("Dinner",400,600,"var(--leaf)",null,"400")+'</div>'+
-  '<h2>Habits</h2><div class="card"><ul class="c"><li>Smaller rice portions</li><li>Less coconut sambol and less coconut oil</li><li>A daily 2 km walk, and more walking after work</li><li>Sleep 7-8 hours</li></ul></div>'+
-  '<h2>Daily routine</h2><div class="card tb"><table><tr><th>Time</th><th>What happens</th></tr><tr><td>6-7 am</td><td>Wake up</td></tr><tr><td>7-8 am</td><td>Wash, eat, dress, bike 1.5 km to the office</td></tr><tr><td>8 am-1 pm</td><td>Office work (sitting)</td></tr><tr><td>1-2 pm</td><td>Home for lunch (bike)</td></tr><tr><td>2-5/6 pm</td><td>Office work</td></tr><tr><td>6-9 pm</td><td>Wash, rest</td></tr><tr><td>9-10 pm</td><td>Sleep</td></tr></table></div>'}
+/* ---------- plan + profile (editable, from the DB) ---------- */
+function pin(key,label,step){
+  var isNum=typeof DEFAULTS[key]==="number";
+  return '<div class="field"><label>'+label+'</label><input id="p-'+key+'"'
+    + (isNum?' type="number" inputmode="decimal"'+(step?' step="'+step+'"':''):' type="text"')
+    + ' value="'+esc(P[key])+'"></div>';
+}
+function profileForm(){
+  var h='<div id="f-profile" class="hidden card" style="margin:12px 0">';
+  h+='<h3>Profile</h3><div class="formgrid">'+pin("age","Age")+pin("height","Height (cm)")+pin("weightLow","Weight low (kg)","any")+pin("weightHigh","Weight high (kg)","any")+pin("startWeight","Start weight (kg)","any")+pin("goalWeight","Goal weight (kg)","any")+pin("healthyLow","Healthy low (kg)","any")+pin("healthyHigh","Healthy high (kg)","any")+'</div>';
+  h+='<div class="field"><label>Job</label><input id="p-job" type="text" value="'+esc(P.job)+'"></div>';
+  h+='<h3 style="margin-top:14px">Calories burned</h3><div class="formgrid">'+pin("bmr","Resting BMR")+pin("activity","Daily activity")+pin("rides","Rides")+pin("femaleAdj","Female adjustment")+'</div>';
+  h+='<h3 style="margin-top:14px">Daily targets</h3><div class="formgrid">'+pin("calorieTarget","Calorie target")+pin("calorieMin","Calorie min")+pin("calorieMax","Calorie max")+pin("proteinLow","Protein low (g)","any")+pin("proteinHigh","Protein high (g)","any")+pin("waterL","Water (L)","any")+pin("glassMl","Glass (ml)")+pin("sleepLow","Sleep low (h)","any")+pin("sleepHigh","Sleep high (h)","any")+pin("walkKm","Walk (km)","any")+'</div>';
+  h+='<h3 style="margin-top:14px">Meal plan (kcal)</h3><div class="formgrid">'+pin("planBreakfast","Breakfast")+pin("planLunch","Lunch")+pin("planSnack","Snack")+pin("planDinner","Dinner")+'</div>';
+  h+='<h3 style="margin-top:14px">Weight loss</h3><div class="formgrid">'+pin("deficit","Deficit (kcal)")+pin("lossPerWeek","Loss per week (kg)","any")+pin("energyPerKg","kcal per kg")+'</div>';
+  h+='<div class="btnrow" style="margin-top:14px"><button class="btn" onclick="saveProfile()">Save plan</button><button class="btn ghost" onclick="toggle(\'f-profile\')">Cancel</button></div></div>';
+  return h;
+}
+window.saveProfile=function(){act(async function(){
+  var obj={};
+  Object.keys(DEFAULTS).forEach(function(k){
+    var el=document.getElementById("p-"+k); if(!el)return;
+    if(typeof DEFAULTS[k]==="number"){var n=Number(el.value);obj[k]=isNaN(n)?DEFAULTS[k]:n;}
+    else obj[k]=el.value;
+  });
+  await send("profile","POST",obj);
+  P=Object.assign({},DEFAULTS,obj);applyProfile();
+  render();
+})};
+function plan(){
+  var avgW=(P.weightLow+P.weightHigh)/2,maint=P.bmr+P.activity+P.rides,maintF=maint-P.femaleAdj;
+  var bPct=maint?P.bmr/maint*100:0,aPct=maint?P.activity/maint*100:0,rPct=maint?P.rides/maint*100:0;
+  var mealTotal=P.planBreakfast+P.planLunch+P.planSnack+P.planDinner;
+  var h='<div class="hd"><h2>Profile and plan</h2><button class="btn sm" onclick="toggle(\'f-profile\')">Edit plan</button></div>';
+  h+=profileForm();
+  h+='<div class="grid"><div class="card"><div class="lab">Age</div><div class="big">'+N(P.age)+'</div></div><div class="card"><div class="lab">Weight</div><div class="big">'+F(P.weightLow)+'-'+F(P.weightHigh)+' kg</div><div class="lab">Average '+F(avgW)+' kg</div></div><div class="card"><div class="lab">Height</div><div class="big">'+N(P.height)+' cm</div></div><div class="card"><div class="lab">Job</div><div class="big" style="font-size:20px">'+esc(P.job)+'</div></div><div class="card"><div class="lab">Goal</div><div class="big">About '+F(P.goalWeight)+' kg</div><div class="lab">Healthy range '+F(P.healthyLow)+'-'+F(P.healthyHigh)+' kg</div></div></div>';
+  h+='<h2>Calories burned</h2><div class="stack" role="img" aria-label="Resting '+N(P.bmr)+', activity '+N(P.activity)+', rides '+N(P.rides)+'"><div style="width:'+bPct+'%;background:var(--leaf)">Resting '+N(P.bmr)+'</div><div style="width:'+aPct+'%;background:var(--sky)">'+N(P.activity)+'</div><div style="width:'+rPct+'%;background:var(--sun)"></div></div><p class="sub">Maintenance is about '+N(maint)+' kcal (resting BMR '+N(P.bmr)+', daily activity '+N(P.activity)+', rides '+N(P.rides)+'). That assumes a male body. For a female body, subtract about '+N(P.femaleAdj)+' kcal, which gives about '+N(maintF)+'.</p>';
+  h+='<h2>The plan</h2><div class="grid"><div class="card"><div class="lab">Calories</div><div class="big">'+N(T)+'</div><div class="lab">Range '+N(MIN)+'-'+N(MAX)+'. Never below '+N(MIN)+'.</div></div><div class="card"><div class="lab">Deficit</div><div class="big">About '+N(P.deficit)+'</div><div class="lab">kcal a day</div></div><div class="card"><div class="lab">Loss a week</div><div class="big">'+F(P.lossPerWeek)+' kg</div></div><div class="card"><div class="lab">Protein</div><div class="big">'+F(PT)+'-'+F(PTH)+' g</div></div><div class="card"><div class="lab">Water</div><div class="big">'+F(P.waterL)+' L</div><div class="lab">'+N(Math.round(WT/GL))+' glasses of '+N(GL)+' ml</div></div><div class="card"><div class="lab">Sleep</div><div class="big">'+F(P.sleepLow)+'-'+F(P.sleepHigh)+' h</div></div></div>';
+  h+='<h2>Meal plan</h2><div class="card">'+row("Breakfast",P.planBreakfast,600,"var(--leaf)",null,N(P.planBreakfast))+row("Lunch",P.planLunch,600,"var(--leaf)",null,N(P.planLunch))+row("Snack",P.planSnack,600,"var(--leaf)",null,N(P.planSnack))+row("Dinner",P.planDinner,600,"var(--leaf)",null,N(P.planDinner))+'<div class="lab" style="margin-top:8px">Total '+N(mealTotal)+' kcal</div></div>';
+  h+='<h2>Habits</h2><div class="card"><ul class="c"><li>Smaller rice portions</li><li>Less coconut sambol and less coconut oil</li><li>A daily '+F(P.walkKm)+' km walk, and more walking after work</li><li>Sleep '+F(P.sleepLow)+'-'+F(P.sleepHigh)+' hours</li></ul></div>';
+  h+='<h2>Daily routine</h2><div class="card tb"><table><tr><th>Time</th><th>What happens</th></tr><tr><td>6-7 am</td><td>Wake up</td></tr><tr><td>7-8 am</td><td>Wash, eat, dress, bike 1.5 km to the office</td></tr><tr><td>8 am-1 pm</td><td>Office work (sitting)</td></tr><tr><td>1-2 pm</td><td>Home for lunch (bike)</td></tr><tr><td>2-5/6 pm</td><td>Office work</td></tr><tr><td>6-9 pm</td><td>Wash, rest</td></tr><tr><td>9-10 pm</td><td>Sleep</td></tr></table></div>';
+  return h;
+}
 
 /* ---------- router ---------- */
 function render(){
@@ -317,4 +382,4 @@ function render(){
   window.scrollTo(0,0);
 }
 window.addEventListener("hashchange",render);
-load().then(render);
+Promise.all([load(),loadProfile()]).then(render);

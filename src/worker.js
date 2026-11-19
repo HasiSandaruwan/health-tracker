@@ -12,6 +12,7 @@ import * as sleep from "../functions/api/sleep.js";
 import * as walk from "../functions/api/walk.js";
 import * as day from "../functions/api/day.js";
 import * as event from "../functions/api/event.js";
+import * as profile from "../functions/api/profile.js";
 
 const routes = {
   "/api/days": days,
@@ -21,6 +22,7 @@ const routes = {
   "/api/walk": walk,
   "/api/day": day,
   "/api/event": event,
+  "/api/profile": profile,
 };
 
 export default {
