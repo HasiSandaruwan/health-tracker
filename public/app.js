@@ -63,6 +63,13 @@ function addBar(d){
     + '<button class="btn sky sm" onclick="addWater(\''+id+'\',125)">+125 ml</button>'
     + '<button class="btn sky sm" onclick="addWater(\''+id+'\',250)">+250 ml</button>'
     + '<button class="btn sky sm" onclick="addWater(\''+id+'\',500)">+500 ml</button></div>';
+  // Drinks quick buttons (count as calories, not water). One tap logs with an
+  // estimate; delete and re-add via "+ Meal" if the value is off.
+  h+='<div class="lab" style="margin-top:10px">Drinks (count as calories, not water)</div><div class="btnrow">'
+    + '<button class="btn sm ghost" onclick="addDrink(\''+id+'\',\'Tea\',\'1 cup, milk & sugar\',40)">+ Tea</button>'
+    + '<button class="btn sm ghost" onclick="addDrink(\''+id+'\',\'Plain tea\',\'1 cup, no sugar\',5)">+ Plain tea</button>'
+    + '<button class="btn sm ghost" onclick="addDrink(\''+id+'\',\'Coffee\',\'1 cup, milk & sugar\',40)">+ Coffee</button>'
+    + '<button class="btn sm ghost" onclick="addDrink(\''+id+'\',\'Soft drink\',\'1 can, 330 ml\',140)">+ Soft drink</button></div>';
   // Toggle buttons
   h+='<div class="btnrow" style="margin-top:12px">'
     + '<button class="btn ghost sm" onclick="toggle(\'f-meal\')">+ Meal</button>'
@@ -78,7 +85,7 @@ function addBar(d){
   h+='<div id="f-meal" class="hidden" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">'
     + '<div class="formgrid">'
     + '<div class="field"><label>Slot</label><select id="mealSlot">'
-      + '<option>Breakfast</option><option>Lunch</option><option selected>Snack</option><option>Dinner</option></select></div>'
+      + '<option>Breakfast</option><option>Lunch</option><option selected>Snack</option><option>Dinner</option><option>Drink</option></select></div>'
     + '<div class="field"><label>Time</label><input id="mealTime" value="'+nowLabel()+'"></div>'
     + '<div class="field"><label>Meal name (optional)</label><input id="mealName" placeholder="e.g. Lunch"></div>'
     + '</div>'
@@ -140,6 +147,16 @@ async function act(fn){
 }
 window.addWater=function(id,amount){act(async function(){
   await send("water","POST",{day_id:id,time:nowLabel(),ml:amount});
+  await refresh();
+})};
+window.addDrink=function(id,name,portion,kcal){act(async function(){
+  await send("meal","POST",{
+    day_id:id,
+    slot:"Drink",
+    time:nowLabel(),
+    name:name,
+    items:[{name:name,portion:portion,kcal:kcal,protein:0}]
+  });
   await refresh();
 })};
 window.saveMeal=function(id){act(async function(){
