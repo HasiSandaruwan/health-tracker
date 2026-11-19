@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Health and Calorie Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f8f7;--card:#fff;--ink:#15232e;--mute:#5a6b76;--line:#dbe4e1;--leaf:#2f7d5b;--sun:#e9a92b;--sky:#2f7fa8;--warn:#c8553d;--track:#e4ecea;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a20;--card:#17262e;--ink:#e8f0ee;--mute:#9db0b8;--line:#2a3d46;--leaf:#4fb88a;--sun:#f0b94a;--sky:#5db3dc;--warn:#e98168;--track:#243842;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a20;--card:#17262e;--ink:#e8f0ee;--mute:#9db0b8;--line:#2a3d46;--leaf:#4fb88a;--sun:#f0b94a;--sky:#5db3dc;--warn:#e98168;--track:#243842;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 "DM Sans",system-ui,sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque","DM Sans",sans-serif;line-height:1.1;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;gap:8px;overflow-x:auto;padding-top:10px;padding-bottom:10px;white-space:nowrap}
+nav a{color:var(--mute);text-decoration:none;font-weight:700;font-size:15px;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card)}
+nav a.on{background:var(--leaf);border-color:var(--leaf);color:#fff}
+nav a:focus-visible{outline:2px solid var(--sky)}
+header{padding:34px 0 8px}
+header h1{font-size:clamp(32px,5.5vw,58px);font-weight:800;letter-spacing:-.03em}
+header p{color:var(--mute);margin:10px 0 0;max-width:40em}
+main{padding-bottom:50px}
+h2{font-size:clamp(24px,3.6vw,34px);font-weight:700;letter-spacing:-.02em;margin:34px 0 12px}
+h3{font-size:19px;font-weight:700;margin-bottom:4px}
+.sub{color:var(--mute);margin:0 0 16px;max-width:42em}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.g2{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;min-width:0}
+.lab{color:var(--mute);font-size:14px}
+.big{font-family:"Bricolage Grotesque",sans-serif;font-size:34px;font-weight:800;line-height:1.15;letter-spacing:-.02em}
+.pill{display:inline-block;font-size:13px;font-weight:700;padding:2px 10px;border-radius:99px;background:var(--track);color:var(--mute);white-space:nowrap}
+.pill.bad{background:color-mix(in srgb,var(--warn) 20%,var(--card));color:var(--warn)}
+.pill.ok{background:color-mix(in srgb,var(--leaf) 20%,var(--card));color:var(--leaf)}
+.row{display:grid;grid-template-columns:minmax(90px,170px) 1fr 84px;gap:12px;align-items:center;margin:11px 0;font-size:15px}
+.row span:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.bx{position:relative;height:14px;border-radius:99px;background:var(--track)}
+.bx i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;min-width:0}
+.bx u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.bx em{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--leaf) 30%,transparent)}
+.ring{width:100%;max-width:210px;display:block;margin:0 auto}
+.ring .t{stroke:var(--track)}.ring .p{stroke-linecap:round;animation:f 1.2s .1s cubic-bezier(.2,.7,.2,1) both}
+@keyframes f{from{stroke-dasharray:0 502.65}to{stroke-dasharray:var(--d) 502.65}}
+.ring text{fill:var(--ink);font-family:"Bricolage Grotesque",sans-serif}
+.glasses{display:grid;grid-template-columns:repeat(auto-fill,minmax(26px,1fr));gap:6px;margin:12px 0}
+.glasses span{aspect-ratio:3/4;border-radius:4px 4px 10px 10px;border:2px solid var(--sky)}
+.glasses .on{background:var(--sky)}.glasses .half{background:linear-gradient(to top,var(--sky) 50%,transparent 50%)}
+.tl{list-style:none;margin:0;padding:0 0 0 20px;border-left:2px solid var(--line)}
+.tl li{position:relative;padding:0 0 14px 20px}
+.tl li::before{content:"";position:absolute;left:-28px;top:7px;width:12px;height:12px;border-radius:50%;background:var(--ink);border:3px solid var(--bg)}
+.tl .water::before{background:var(--sky)}.tl .meal::before{background:var(--sun)}.tl .act::before{background:var(--leaf)}
+.tl b{display:block;font-size:14px;color:var(--mute);font-weight:500}
+.tb{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:500;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.note{background:color-mix(in srgb,var(--sun) 16%,var(--card));border:1px solid color-mix(in srgb,var(--sun) 50%,var(--line));border-radius:14px;padding:14px 16px;margin-top:14px}
+ul.c{margin:6px 0;padding-left:20px}
+.stack{display:flex;height:40px;border-radius:12px;overflow:hidden;margin:12px 0 8px}.stack div{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.hd{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+footer{padding:24px 0 50px;color:var(--mute);font-size:14px;border-top:1px solid var(--line)}
+@media (max-width:700px){.g2{grid-template-columns:1fr}.row{grid-template-columns:1fr 70px}.row .bx{grid-column:1/-1;order:3}}
+@media (prefers-reduced-motion:reduce){.ring .p{animation:none}}
+</style>
+</head>
+<body>
+<nav><div class="wrap" id="tabs"></div></nav>
+<header><div class="wrap"><h1>Health and calorie tracker</h1><p>A super dashboard across every logged day, plus a full page for each day. Goal: weight loss, about 1,550 kcal a day.</p></div></header>
+<main><div class="wrap" id="main"></div></main>
+<footer><div class="wrap">All calorie values are estimates and can be off by about 10%. The numbers also live in the Health and Calorie Tracker sheet in Google Drive.</div></footer>
+<script>
+var PLAN={Breakfast:450,Lunch:550,Snack:150,Dinner:400},T=1550,MIN=1500,MAX=1600,PT=90,WT=2500,GL=250;
+var DAYS=[
+{id:"2026-11-18",label:"Wed 18 Nov",full:"Wednesday, 18 November 2026",done:true,sleep:{h:6.08,txt:"Bed 11:15 pm (17 Nov), up 5:20 am. About 6 h 5 min."},walk:{km:2,kcal:70},
+meals:[
+{t:"About 8:00 am",slot:"Breakfast",name:"Breakfast",p:20,c:null,f:null,items:[["Red rice","About 1.5 cups cooked",320,null],["Boiled egg","1 egg",75,null],["Coconut sambol","About 3 tbsp",130,null],["Devilled winged bean with onion, dry fish and coconut oil","About 1/2 cup",125,null]]},
+{t:"After 8:37 am",slot:"Snack",name:"Snack: boiled chickpeas",p:2,c:6.5,f:1.5,items:[["Boiled chickpeas","16 pieces, about 24 g",40,null],["Coconut oil","1 ml",8,null]]},
+{t:"12:35 pm",slot:"Lunch",name:"Lunch",p:37,c:73,f:19,items:[["Red rice","260 g cooked (1.5 cups)",300,6.5],["Frigate tuna curry","About 100 g",150,25],["Yardlong bean curry","About 80 g",90,2.5],["Mukunuwenna mallum (with grated coconut)","About 60 g",80,2.5]]},
+{t:"6:00 pm",slot:"Snack",name:"Evening snack: Sri Lankan egg roll (bakery made, estimated)",p:8,c:28,f:15,items:[["Egg roll","1 roll (assumed)",280,8]]},
+{t:"6:30 pm",slot:"Dinner",name:"Dinner",p:29.5,c:68,f:20,items:[["Red raw rice (Rathu Kekulu)","About 1.5 cups (220 g), 250-270 kcal",260,5.5],["Devilled fish (Malu Thel Dala)","About 85-100 g, 200-250 kcal",230,22],["Ladies\u2019 fingers curry (Bandakka Kirata)","About 3/4 cup (100 g), 85-105 kcal",95,2]]}],
+ev:[["10:48 pm (17 Nov)","w",250],["11:15 pm (17 Nov)","s","Went to sleep"],["5:20 am","s","Woke up after about 6 h 5 min of sleep"],["5:43 am","w",250],["After 5:43 am","a","2 km walk, about 70 kcal burned"],["After the walk","w",500],["About 8:00 am","m",0],["After breakfast","w",250],["After 8:37 am","w",250],["After 8:37 am","m",1],["10:30 am","w",250],["11:10 am","w",125],["12:12 pm","w",125],["12:35 pm","m",2],["After lunch","w",250],["After lunch (logged later)","w",125],["2:42 pm","w",125],["3:30 pm","w",125],["4:00 pm","w",125],["4:41 pm","w",125],["5:30 pm","w",125],["6:00 pm","m",3],["After the egg roll","w",125],["6:30 pm","m",4],["7:30 pm","w",125],["10:00 pm","w",250]],
+notes:["Meals before 10 pm on 17 Nov were not tracked.","The 10:48 pm glass on 17 Nov counts toward this day\u2019s water.","The egg roll is an estimate of one bakery roll (about 230-350 kcal). Dinner is the middle of a 540-630 kcal estimate.","Sleep that night is on the 19 Nov page."]},
+{id:"2026-11-19",label:"Thu 19 Nov",full:"Thursday, 19 November 2026",done:false,sleep:{h:8,txt:"Bed 10:15 pm (18 Nov), up 6:15 am. 8 h 0 min."},walk:null,meals:[{t:"7:40 am",slot:"Breakfast",name:"Breakfast",p:7.4,c:23.7,f:7,items:[["Boiled white kadala (chickpeas)","100 pieces, about 75-80 g",128,6.9],["Fresh coconut slice","1 strip, about 15 g",53,0.5]]}],
+ev:[["10:15 pm (18 Nov)","s","Went to sleep"],["6:15 am","s","Woke up after 8 h 0 min of sleep"],["7:30 am","w",125],["7:40 am","m",0],["After breakfast","w",250],["9:10 am","w",125],["10:00 am","w",125]],notes:["Breakfast was about 90-95 g of food in total. All values are estimates.","Day in progress. Meals, water and activity are added as the day goes."]}
+];
+var $=function(s){return document.querySelector(s)},N=function(n){return Math.round(n).toLocaleString("en-US")},F=function(n){return String(Math.round(n*10)/10)};
+function kc(d){return d.meals.reduce(function(a,m){return a+m.items.reduce(function(b,i){return b+i[2]},0)},0)}
+function pr(d){return d.meals.reduce(function(a,m){return a+(m.p||0)},0)}
+function ml(d){return d.ev.reduce(function(a,e){return a+(e[1]==="w"?e[2]:0)},0)}
+function slotKc(d,s){return d.meals.filter(function(m){return m.slot===s}).reduce(function(a,m){return a+m.items.reduce(function(b,i){return b+i[2]},0)},0)}
+function st(d,k){if(!d.done)return["In progress",""];return k>MAX?["Over range","bad"]:k<MIN?["Under range","bad"]:["In range","ok"]}
+function bar(v,mx,col,mk,zone){var h='<div class="bx">';if(zone)h+='<em style="left:'+zone[0]/mx*100+'%;width:'+(zone[1]-zone[0])/mx*100+'%"></em>';h+='<i style="width:'+Math.min(100,v/mx*100)+'%;background:'+col+'"></i>';if(mk!=null)h+='<u style="left:'+Math.min(99.5,mk/mx*100)+'%"></u>';return h+'</div>'}
+function row(l,v,mx,col,mk,txt,zone){return'<div class="row"><span>'+l+'</span>'+bar(v,mx,col,mk,zone)+'<span>'+txt+'</span></div>'}
+function tile(l,b,s,c){return'<div class="card"><div class="lab">'+l+'</div><div class="big"'+(c?' style="color:var(--'+c+')"':'')+'>'+b+'</div><div class="lab">'+s+'</div></div>'}
+function glasses(m){var n=m/GL,full=Math.floor(n),half=(m%GL>=125)?1:0,tot=Math.min(24,Math.max(10,full+half)),h='';for(var i=0;i<tot;i++)h+='<span class="'+(i<full?'on':(i===full&&half?'half':''))+'"></span>';return'<div class="glasses" role="img" aria-label="'+F(n)+' glasses">'+h+'</div>'}
+function ring(k){var c=k>MAX?"var(--warn)":"var(--leaf)",d=Math.min(1,k/T)*502.65;return'<svg class="ring" viewBox="0 0 200 200" role="img" aria-label="'+N(k)+' of '+N(T)+' kcal eaten"><circle class="t" cx="100" cy="100" r="80" fill="none" stroke-width="16"/><circle class="p" cx="100" cy="100" r="80" fill="none" stroke-width="16" stroke="'+c+'" style="--d:'+d+'" transform="rotate(-90 100 100)"/><text x="100" y="104" text-anchor="middle" font-size="38" font-weight="800">'+N(k)+'</text><text x="100" y="126" text-anchor="middle" font-size="13" style="fill:var(--mute)">of '+N(T)+' kcal</text></svg>'}
+function dayView(d){
+var k=kc(d),p=pr(d),w=ml(d),s=st(d,k),diff=k-T,h='';
+h+='<div class="hd"><h2>'+d.full+'</h2><span class="pill '+s[1]+'">'+s[0]+'</span></div>';
+h+='<div class="grid">'+tile("Calories eaten",N(k),d.meals.length?(diff>0?N(diff)+" over the "+N(T)+" target":N(-diff)+" left to "+N(T)):"Nothing logged yet",k>MAX?"warn":"")+tile("Protein",F(p)+" g",p>=PT?"Target of 90-100 g reached":F(PT-p)+" g to reach 90 g")+tile("Water",F(w/GL),F(w/1000)+" litres of 2.5, in glasses of 250 ml","sky")+tile("Sleep before",F(d.sleep.h)+" h","Goal 7-8 h",d.sleep.h<7?"warn":"leaf")+tile("Walk",d.walk?d.walk.km+" km":"None yet",d.walk?"About "+d.walk.kcal+" kcal burned":"Goal: 2 km a day")+'</div>';
+h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Calories</h3>'+ring(k)+'<div class="lab" style="text-align:center;margin-top:8px">Range '+N(MIN)+'-'+N(MAX)+' kcal</div></div>';
+h+='<div class="card"><h3>Meals vs plan</h3><div class="lab">Planned kcal. Line = plan for that meal.</div>';
+Object.keys(PLAN).forEach(function(s2){var a=slotKc(d,s2);h+=row(s2,a,700,a>PLAN[s2]?"var(--warn)":"var(--leaf)",PLAN[s2],N(a)+" / "+PLAN[s2])});
+h+='<div class="lab" style="margin-top:10px">Protein '+F(p)+' g of 90-100 g</div>'+bar(p,110,"var(--sun)",PT)+'</div></div>';
+h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Water</h3><div class="lab">'+F(w/GL)+' glasses, '+N(w)+' ml. Target 10 glasses.</div>'+glasses(w)+'</div><div class="card"><h3>Sleep before this day</h3><div class="lab">'+d.sleep.txt+'</div>'+row("Hours",d.sleep.h,10,d.sleep.h<7?"var(--warn)":"var(--leaf)",null,F(d.sleep.h)+" h",[7,8])+'<div class="lab">Shaded zone is the 7-8 hour goal.</div></div></div>';
+h+='<h2>Meals in detail</h2>';
+if(!d.meals.length)h+='<div class="card lab">No meals logged yet.</div>';
+d.meals.forEach(function(m){var t=m.items.reduce(function(a,i){return a+i[2]},0);
+h+='<div class="card" style="margin-bottom:12px"><div class="hd"><h3>'+m.name+'</h3><span class="lab">'+m.t+'</span></div><div class="chips"><span class="pill">'+N(t)+' kcal</span><span class="pill">'+F(m.p)+' g protein</span>'+(m.c!=null?'<span class="pill">'+F(m.c)+' g carbs</span>':'')+(m.f!=null?'<span class="pill">'+F(m.f)+' g fat</span>':'')+'</div><div class="tb"><table><tr><th>Item</th><th>Portion</th><th>kcal</th><th>Protein</th></tr>';
+m.items.forEach(function(i){h+='<tr><td>'+i[0]+'</td><td>'+i[1]+'</td><td>'+i[2]+'</td><td>'+(i[3]!=null?i[3]+' g':'')+'</td></tr>'});
+h+='</table></div></div>'});
+h+='<h2>Timeline</h2><ul class="tl">';
+d.ev.forEach(function(e){var c=e[1],x;if(c==="w"){x="Water, "+e[2]+" ml"}else if(c==="m"){var m=d.meals[e[2]];x=m.name+": about "+N(m.items.reduce(function(a,i){return a+i[2]},0))+" kcal, "+F(m.p)+" g protein"}else x=e[2];h+='<li class="'+(c==="w"?"water":c==="m"?"meal":c==="a"?"act":"")+'"><b>'+e[0]+'</b>'+x+'</li>'});
+h+='</ul><h2>Notes</h2><div class="note"><ul class="c">'+d.notes.map(function(n){return'<li>'+n+'</li>'}).join('')+'</ul></div>';
+return h}
+function overview(){
+var dn=DAYS.filter(function(d){return d.done}),av=function(f){return dn.length?dn.reduce(function(a,d){return a+f(d)},0)/dn.length:0},h='';
+var sl=DAYS.reduce(function(a,d){return a+d.sleep.h},0)/DAYS.length,inr=dn.filter(function(d){var k=kc(d);return k>=MIN&&k<=MAX}).length;
+h+='<h2>Super dashboard</h2><p class="sub">Every logged day side by side. Averages use finished days only; sleep uses every night logged.</p><div class="grid">'+tile("Days logged",DAYS.length,dn.length+" finished, "+(DAYS.length-dn.length)+" in progress")+tile("Average calories",N(av(kc)),"kcal a day against "+N(T),av(kc)>MAX?"warn":"leaf")+tile("Average protein",F(av(pr))+" g","Goal 90-100 g")+tile("Average water",F(av(ml)/1000)+" L","Goal 2.5 L","sky")+tile("Average sleep",F(sl)+" h","Goal 7-8 h")+tile("Days in calorie range",inr+" of "+dn.length,N(MIN)+"-"+N(MAX)+" kcal")+'</div>';
+h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Calories a day</h3><div class="lab">Line = '+N(T)+' target</div>';
+DAYS.forEach(function(d){var k=kc(d);h+=row(d.label,k,2600,k>MAX?"var(--warn)":"var(--leaf)",T,d.meals.length?N(k):"-")});
+h+='</div><div class="card"><h3>Protein a day</h3><div class="lab">Line = 90 g</div>';
+DAYS.forEach(function(d){var p=pr(d);h+=row(d.label,p,120,"var(--sun)",PT,d.meals.length?F(p)+" g":"-")});
+h+='</div><div class="card"><h3>Water a day</h3><div class="lab">Line = 2.5 L</div>';
+DAYS.forEach(function(d){var w=ml(d);h+=row(d.label,w,4000,"var(--sky)",WT,F(w/1000)+" L")});
+h+='</div><div class="card"><h3>Sleep before each day</h3><div class="lab">Shaded = 7-8 h</div>';
+DAYS.forEach(function(d){h+=row(d.label,d.sleep.h,10,d.sleep.h<7?"var(--warn)":"var(--leaf)",null,F(d.sleep.h)+" h",[7,8])});
+h+='</div></div><h2>All days at a glance</h2><div class="card tb"><table><tr><th>Day</th><th>kcal</th><th>vs target</th><th>Protein</th><th>Water</th><th>Sleep</th><th>Walk</th><th>Status</th></tr>';
+DAYS.forEach(function(d){var k=kc(d),s=st(d,k);h+='<tr><td><a href="#day-'+d.id+'" style="color:var(--leaf);font-weight:700">'+d.label+'</a></td><td>'+(d.meals.length?N(k):"-")+'</td><td>'+(d.meals.length?(k-T>0?"+":"")+N(k-T):"-")+'</td><td>'+(d.meals.length?F(pr(d))+" g":"-")+'</td><td>'+F(ml(d)/1000)+' L</td><td>'+F(d.sleep.h)+' h</td><td>'+(d.walk?d.walk.km+" km":"-")+'</td><td><span class="pill '+s[1]+'">'+s[0]+'</span></td></tr>'});
+h+='</table></div><h2>Weight goal</h2><div class="g2"><div class="card"><h3>68 kg to about 63 kg</h3><div class="lab">Healthy range 59-64 kg. About 5 kg to lose at the expected 0.31 kg a week (about 16 weeks). No weigh-ins have been logged yet, so 68 kg is the average of your 66-70 kg range.</div>'+bar(2,100,"var(--leaf)",null,[80,100])+'</div><div class="card"><h3>What the first days show</h3><ul class="c"><li>18 Nov: protein target reached, but calories ran well over (breakfast, lunch, snacks and dinner were all above plan).</li><li>Sleep improved from 6 h 5 min to 8 h.</li><li>Water has been above the 2.5 L goal every logged day.</li></ul></div></div>';
+return h}
+function plan(){return'<h2>Profile and plan</h2><div class="grid"><div class="card"><div class="lab">Age</div><div class="big">33</div></div><div class="card"><div class="lab">Weight</div><div class="big">66-70 kg</div><div class="lab">Average 68 kg</div></div><div class="card"><div class="lab">Height</div><div class="big">163 cm</div><div class="lab">About 5 ft 4 in</div></div><div class="card"><div class="lab">Job</div><div class="big" style="font-size:22px">Software engineer</div><div class="lab">Mostly desk work</div></div><div class="card"><div class="lab">Goal</div><div class="big">About 63 kg</div><div class="lab">Healthy range 59-64 kg, about 3 months</div></div></div>'+
+'<h2>Calories burned</h2><div class="stack" role="img" aria-label="Resting 1,540, activity 310, rides 40"><div style="width:81.5%;background:var(--leaf)">Resting 1,540</div><div style="width:16.4%;background:var(--sky)">310</div><div style="width:2.1%;background:var(--sun)"></div></div><p class="sub">Maintenance is about 1,890 kcal (resting BMR 1,540, daily activity 310, rides 40). That assumes a male body. For a female body, subtract about 170 kcal, which gives about 1,720.</p><div class="note">The routine says the commute is by bike, but the calorie table says motorbike. A 40 kcal figure only fits a motorbike. Four bicycle trips of 1.5 km (6 km in total) would burn more.</div>'+
+'<h2>The plan</h2><div class="grid"><div class="card"><div class="lab">Calories</div><div class="big">1,550</div><div class="lab">Range 1,500-1,600. Never below 1,500.</div></div><div class="card"><div class="lab">Deficit</div><div class="big">About 340</div><div class="lab">kcal a day (file estimate 350-400)</div></div><div class="card"><div class="lab">Loss a week</div><div class="big">0.31 kg</div><div class="lab">File estimate 0.35-0.4 kg</div></div><div class="card"><div class="lab">Protein</div><div class="big">90-100 g</div></div><div class="card"><div class="lab">Water</div><div class="big">2.5 L</div><div class="lab">10 glasses of 250 ml. 2.5-3 L on hot days.</div></div><div class="card"><div class="lab">Sleep</div><div class="big">7-8 h</div><div class="lab">Lights out 9-10 pm</div></div></div>'+
+'<h2>Meal plan</h2><div class="card">'+row("Breakfast",450,600,"var(--leaf)",null,"450")+row("Lunch",550,600,"var(--leaf)",null,"550")+row("Evening snack",150,600,"var(--leaf)",null,"150")+row("Dinner",400,600,"var(--leaf)",null,"400")+'</div>'+
+'<h2>Habits</h2><div class="card"><ul class="c"><li>Smaller rice portions</li><li>Less coconut sambol and less coconut oil</li><li>A daily 2 km walk, and more walking after work</li><li>Sleep 7-8 hours</li></ul></div>'+
+'<h2>Daily routine</h2><div class="card tb"><table><tr><th>Time</th><th>What happens</th></tr><tr><td>6-7 am</td><td>Wake up</td></tr><tr><td>7-8 am</td><td>Wash, eat, dress, bike 1.5 km to the office</td></tr><tr><td>8 am-1 pm</td><td>Office work (sitting)</td></tr><tr><td>1-2 pm</td><td>Home for lunch (bike)</td></tr><tr><td>2-5/6 pm</td><td>Office work</td></tr><tr><td>6-9 pm</td><td>Wash, rest</td></tr><tr><td>9-10 pm</td><td>Sleep</td></tr></table></div>'}
+function render(){
+var hs=(location.hash||"#overview").slice(1),h="";
+var tabs='<a href="#overview" class="'+(hs==="overview"?"on":"")+'">Super dashboard</a>'+DAYS.map(function(d){return'<a href="#day-'+d.id+'" class="'+(hs==="day-"+d.id?"on":"")+'">'+d.label+'</a>'}).join("")+'<a href="#plan" class="'+(hs==="plan"?"on":"")+'">Plan and profile</a>';
+$("#tabs").innerHTML=tabs;
+var d=DAYS.filter(function(x){return"day-"+x.id===hs})[0];
+$("#main").innerHTML=hs==="plan"?plan():d?dayView(d):overview();
+window.scrollTo(0,0)}
+window.addEventListener("hashchange",render);render();
+</script>
+</body>
+</html>

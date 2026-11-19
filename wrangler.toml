@@ -1,0 +1,8 @@
+name = "health-tracker"
+pages_build_output_dir = "public"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "health-db"
+database_id = "8cdd9042-05f1-4913-a59a-ddbb8aa931fc"
