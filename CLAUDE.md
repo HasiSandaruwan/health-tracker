@@ -35,7 +35,9 @@ functions/api/
   _utils.js   json(), bad(), body(), ensureDay() helpers (not routed; "_" prefix)
   days.js     GET    all days, shaped like the old DAYS array
   water.js    POST   { day_id, time, ml }
-  meal.js     POST   { day_id, time, slot, name, protein, carbs, fat, items:[{name,portion,kcal,protein}] }
+  meal.js     POST   { day_id, time, slot, name, items:[{name,portion,kcal,protein,carbs,fat}] }
+              (meal totals are derived from items; meal-level protein/carbs/fat
+               columns are kept only for older rows)
   sleep.js    POST   { day_id, hours, note }
   walk.js     POST   { day_id, km, kcal }
   day.js      POST   { day_id, done?, note? }   also creates today's page
@@ -54,8 +56,10 @@ wrangler.toml       database_id must be pasted in (not committed as a real secre
 ## Data shape (GET /api/days)
 Array of:
 `{id, label, full, done, sleep:{h,txt}, walk:{km,kcal}|null,
-  meals:[{id,t,slot,name,p,c,f,items:[[name,portion,kcal,protein]]}],
+  meals:[{id,t,slot,name,p,c,f,items:[[name,portion,kcal,protein,carbs,fat]]}],
   ev:[[time,type,value,id]], notes:[]}`
+- A meal's `p`/`c`/`f` (protein/carbs/fat) are summed from its items; if no item
+  carries a value, they fall back to the meal-level column (older entries).
 - `ev` type: `w` water (value = ml), `s` sleep (text), `a` activity (text),
   `m` meal (value = index of the meal in `meals`). `id` is the event row id.
 - `label`/`full` are computed from the date id on the server.

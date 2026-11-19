@@ -32,7 +32,9 @@ CREATE TABLE IF NOT EXISTS meal_items (
   name TEXT,
   portion TEXT,
   kcal INTEGER,
-  protein REAL
+  protein REAL,
+  carbs REAL,
+  fat REAL
 );
 CREATE TABLE IF NOT EXISTS profile (
   id INTEGER PRIMARY KEY CHECK (id = 1),  -- single row

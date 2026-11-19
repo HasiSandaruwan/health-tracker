@@ -31,13 +31,15 @@ export async function onRequestPost(context) {
 
   for (const it of items) {
     await DB.prepare(
-      "INSERT INTO meal_items (meal_id, name, portion, kcal, protein) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO meal_items (meal_id, name, portion, kcal, protein, carbs, fat) VALUES (?, ?, ?, ?, ?, ?, ?)"
     ).bind(
       mealId,
       (it.name && String(it.name).trim()) || "Item",
       it.portion || "",
       num(it.kcal) || 0,
-      num(it.protein)
+      num(it.protein),
+      num(it.carbs),
+      num(it.fat)
     ).run();
   }
 

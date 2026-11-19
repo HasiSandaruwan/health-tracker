@@ -117,12 +117,7 @@ function addBar(d){
     + '<div class="field"><label>Time</label><input id="mealTime" value="'+nowLabel()+'"></div>'
     + '<div class="field"><label>Meal name (optional)</label><input id="mealName" placeholder="e.g. Lunch"></div>'
     + '</div>'
-    + '<div class="formgrid">'
-    + '<div class="field"><label>Protein g (optional)</label><input id="mealP" type="number" inputmode="decimal" step="any"></div>'
-    + '<div class="field"><label>Carbs g (optional)</label><input id="mealC" type="number" inputmode="decimal" step="any"></div>'
-    + '<div class="field"><label>Fat g (optional)</label><input id="mealF" type="number" inputmode="decimal" step="any"></div>'
-    + '</div>'
-    + '<div class="lab" style="margin-top:10px">Items</div><div id="mealItems"></div>'
+    + '<div class="lab" style="margin-top:10px">Items (protein, carbs and fat are added up from the items below)</div><div id="mealItems"></div>'
     + '<div class="btnrow"><button class="btn ghost sm" onclick="addItemRow()">+ Add item</button>'
     + '<button class="btn sm" onclick="saveMeal(\''+id+'\')">Save meal</button></div></div>';
 
@@ -155,6 +150,8 @@ function itemRowHTML(){
     + '<div class="field"><label>Portion</label><input class="it-portion" placeholder="1 cup"></div>'
     + '<div class="field"><label>kcal</label><input class="it-kcal" type="number" inputmode="numeric"></div>'
     + '<div class="field"><label>Protein g</label><input class="it-protein" type="number" inputmode="decimal" step="any"></div>'
+    + '<div class="field"><label>Carbs g</label><input class="it-carbs" type="number" inputmode="decimal" step="any"></div>'
+    + '<div class="field"><label>Fat g</label><input class="it-fat" type="number" inputmode="decimal" step="any"></div>'
     + '<button class="del" title="Remove item" onclick="this.closest(\'.itemrow\').remove()">×</button>'
     + '</div>';
 }
@@ -193,7 +190,14 @@ window.saveMeal=function(id){act(async function(){
     var name=r.querySelector(".it-name").value.trim();
     var kcal=r.querySelector(".it-kcal").value;
     if(!name&&!kcal)return;
-    items.push({name:name,portion:r.querySelector(".it-portion").value.trim(),kcal:kcal,protein:r.querySelector(".it-protein").value});
+    items.push({
+      name:name,
+      portion:r.querySelector(".it-portion").value.trim(),
+      kcal:kcal,
+      protein:r.querySelector(".it-protein").value,
+      carbs:r.querySelector(".it-carbs").value,
+      fat:r.querySelector(".it-fat").value
+    });
   });
   if(!items.length){alert("Add at least one item (name and kcal).");return;}
   await send("meal","POST",{
@@ -201,9 +205,6 @@ window.saveMeal=function(id){act(async function(){
     slot:document.getElementById("mealSlot").value,
     time:document.getElementById("mealTime").value.trim()||nowLabel(),
     name:document.getElementById("mealName").value.trim(),
-    protein:document.getElementById("mealP").value,
-    carbs:document.getElementById("mealC").value,
-    fat:document.getElementById("mealF").value,
     items:items
   });
   await refresh();
@@ -271,8 +272,8 @@ function dayView(d){
   h+='<h2>Meals in detail</h2>';
   if(!d.meals.length)h+='<div class="card lab">No meals logged yet. Use "+ Meal" above.</div>';
   d.meals.forEach(function(m){var t=m.items.reduce(function(a,i){return a+i[2]},0);
-    h+='<div class="card" style="margin-bottom:12px"><div class="hd"><h3>'+esc(m.name)+'</h3><span class="lab">'+esc(m.t)+'</span>'+(m.id!=null?'<button class="del meal-del" title="Delete meal" onclick="delMeal('+m.id+')">×</button>':'')+'</div><div class="chips"><span class="pill">'+N(t)+' kcal</span><span class="pill">'+F(m.p||0)+' g protein</span>'+(m.c!=null?'<span class="pill">'+F(m.c)+' g carbs</span>':'')+(m.f!=null?'<span class="pill">'+F(m.f)+' g fat</span>':'')+'</div><div class="tb"><table><tr><th>Item</th><th>Portion</th><th>kcal</th><th>Protein</th></tr>';
-    m.items.forEach(function(i){h+='<tr><td>'+esc(i[0])+'</td><td>'+esc(i[1])+'</td><td>'+i[2]+'</td><td>'+(i[3]!=null?i[3]+' g':'')+'</td></tr>'});
+    h+='<div class="card" style="margin-bottom:12px"><div class="hd"><h3>'+esc(m.name)+'</h3><span class="lab">'+esc(m.t)+'</span>'+(m.id!=null?'<button class="del meal-del" title="Delete meal" onclick="delMeal('+m.id+')">×</button>':'')+'</div><div class="chips"><span class="pill">'+N(t)+' kcal</span><span class="pill">'+F(m.p||0)+' g protein</span>'+(m.c!=null?'<span class="pill">'+F(m.c)+' g carbs</span>':'')+(m.f!=null?'<span class="pill">'+F(m.f)+' g fat</span>':'')+'</div><div class="tb"><table><tr><th>Item</th><th>Portion</th><th>kcal</th><th>Protein</th><th>Carbs</th><th>Fat</th></tr>';
+    m.items.forEach(function(i){h+='<tr><td>'+esc(i[0])+'</td><td>'+esc(i[1])+'</td><td>'+i[2]+'</td><td>'+(i[3]!=null?i[3]+' g':'')+'</td><td>'+(i[4]!=null?i[4]+' g':'')+'</td><td>'+(i[5]!=null?i[5]+' g':'')+'</td></tr>'});
     h+='</table></div></div>'});
   h+='<h2>Timeline</h2>';
   if(!d.ev.length)h+='<div class="card lab">Nothing logged yet today.</div>';

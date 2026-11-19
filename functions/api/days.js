@@ -50,15 +50,23 @@ export async function onRequestGet(context) {
       const items = (await DB.prepare(
         "SELECT * FROM meal_items WHERE meal_id = ? ORDER BY id ASC"
       ).bind(m.id).all()).results || [];
+      // Totals come from the items. If no item carries a value, fall back to the
+      // meal-level column (older entries that stored protein/carbs/fat on the meal).
+      let sp = 0, sc = 0, sf = 0, hasP = false, hasC = false, hasF = false;
+      for (const it of items) {
+        if (it.protein != null) { sp += it.protein; hasP = true; }
+        if (it.carbs != null) { sc += it.carbs; hasC = true; }
+        if (it.fat != null) { sf += it.fat; hasF = true; }
+      }
       mealsOut.push({
         id: m.id,
         t: m.time,
         slot: m.slot,
         name: m.name || m.slot,
-        p: m.protein,
-        c: m.carbs,
-        f: m.fat,
-        items: items.map((it) => [it.name, it.portion, it.kcal, it.protein]),
+        p: hasP ? sp : m.protein,
+        c: hasC ? sc : m.carbs,
+        f: hasF ? sf : m.fat,
+        items: items.map((it) => [it.name, it.portion, it.kcal, it.protein, it.carbs, it.fat]),
       });
     }
 
