@@ -314,6 +314,54 @@ window.newDay=function(){act(async function(){
   if(existed)alert("That day already exists — opened it.");
 })};
 
+/* ---------- month calendar (dashboard) ---------- */
+var CALM=["January","February","March","April","May","June","July","August","September","October","November","December"];
+var CALW=["Su","Mo","Tu","We","Th","Fr","Sa"];
+var calState=null; // {y, m(0-11)}
+function pad2(n){return n<10?"0"+n:""+n}
+function calGrid(){
+  var t=todayId();
+  if(!calState)calState={y:parseInt(t.slice(0,4),10),m:parseInt(t.slice(5,7),10)-1};
+  var y=calState.y,m=calState.m;
+  var map={};DAYS.forEach(function(d){map[d.id]=d.done?"done":"prog"});
+  var first=new Date(Date.UTC(y,m,1)).getUTCDay();
+  var ndays=new Date(Date.UTC(y,m+1,0)).getUTCDate();
+  var h='<div class="calhd"><button class="calnav" aria-label="Previous month" onclick="calShift(-1)">‹</button>'
+    + '<div class="calttl">'+CALM[m]+' '+y+'</div>'
+    + '<button class="calnav" aria-label="Next month" onclick="calShift(1)">›</button></div>';
+  h+='<div class="calgrid dow">'+CALW.map(function(w){return'<div class="caldow">'+w+'</div>'}).join("")+'</div>';
+  h+='<div class="calgrid">';
+  for(var i=0;i<first;i++)h+='<div class="calcell empty"></div>';
+  for(var d=1;d<=ndays;d++){
+    var id=y+"-"+pad2(m+1)+"-"+pad2(d);
+    var sstat=map[id]||"",isToday=id===t,future=id>t;
+    var cls="calcell"+(sstat?" "+sstat:"")+(isToday?" today":"")+(future?" future":"");
+    var lab=d+" "+CALM[m]+" "+y+(sstat==="done"?", finished":sstat==="prog"?", in progress":isToday?", today, no log yet":", no log");
+    var dot=sstat==="done"?'<span class="caldot done">✓</span>':sstat==="prog"?'<span class="caldot prog"></span>':'<span class="caldot"></span>';
+    h+='<button type="button" class="'+cls+'" aria-label="'+lab+'"'+(future?' disabled':' onclick="calPick(\''+id+'\')"')+'><span class="caln">'+d+'</span>'+dot+'</button>';
+  }
+  h+='</div>';
+  h+='<div class="callegend"><span class="lg done"><b></b>Finished</span><span class="lg prog"><b></b>In progress</span><span class="lg today"><b></b>Today</span></div>';
+  return h;
+}
+function calendar(){
+  return '<div class="card cal"><div id="calWrap">'+calGrid()+'</div></div>';
+}
+window.calShift=function(delta){
+  if(!calState)return;
+  var m=calState.m+delta,y=calState.y;
+  if(m<0){m=11;y--}else if(m>11){m=0;y++}
+  calState={y:y,m:m};
+  var w=document.getElementById("calWrap");if(w)w.innerHTML=calGrid();
+};
+window.calPick=function(id){act(async function(){
+  if(id>todayId())return;
+  var existed=DAYS.some(function(d){return d.id===id});
+  if(!existed){await send("day","POST",{day_id:id});await load();}
+  location.hash="#day-"+id;
+  render();
+})};
+
 /* ---------- day page ---------- */
 function dayView(d){
   var k=kc(d),p=pr(d),w=ml(d),s=st(d,k),diff=k-T,h='';
@@ -360,13 +408,14 @@ function dayView(d){
 /* ---------- super dashboard ---------- */
 function overview(){
   if(!DAYS.length){
-    return '<h2>Super dashboard</h2><p class="sub">No days logged yet.</p>'
-      + '<div class="card"><h3>Start tracking</h3><div class="lab">Create today’s page, then add water, meals, sleep and your walk.</div>'
-      + '<div class="btnrow" style="margin-top:10px"><input type="date" id="newDayDate" class="dateinput" value="'+todayId()+'" max="'+todayId()+'"><button class="btn" onclick="newDay()">+ New day</button></div></div>';
+    return calendar()+'<h2>Super dashboard</h2><p class="sub">No days logged yet.</p>'
+      + '<div class="card"><h3>Start tracking</h3><div class="lab">Tap today on the calendar above (or the button) to create your first day, then add water, meals, sleep and your walk.</div>'
+      + '<div class="btnrow" style="margin-top:10px"><button class="btn" onclick="newDay()">+ New day (today)</button></div></div>';
   }
   var dn=DAYS.filter(function(d){return d.done}),av=function(f){return dn.length?dn.reduce(function(a,d){return a+f(d)},0)/dn.length:0},h='';
   var sl=DAYS.length?DAYS.reduce(function(a,d){return a+d.sleep.h},0)/DAYS.length:0,inr=dn.filter(function(d){var k=kc(d);return k>=MIN&&k<=MAX}).length;
-  h+='<div class="hd"><h2>Super dashboard</h2><div class="btnrow"><input type="date" id="newDayDate" class="dateinput" value="'+todayId()+'" max="'+todayId()+'"><button class="btn sm" onclick="newDay()">+ New day</button></div></div><p class="sub">Every logged day side by side. Averages use finished days only; sleep uses every night logged.</p><div class="grid">'+tile("Days logged",DAYS.length,dn.length+" finished, "+(DAYS.length-dn.length)+" in progress")+tile("Average calories",N(av(kc)),"kcal a day against "+N(T),av(kc)>MAX?"warn":"leaf")+tile("Average protein",F(av(pr))+" g","Goal "+F(PT)+"-"+F(PTH)+" g")+tile("Average water",F(av(ml)/1000)+" L","Goal "+F(P.waterL)+" L","sky")+tile("Average sleep",F(sl)+" h","Goal "+F(P.sleepLow)+"-"+F(P.sleepHigh)+" h")+tile("Days in calorie range",inr+" of "+dn.length,N(MIN)+"-"+N(MAX)+" kcal")+'</div>';
+  h+=calendar();
+  h+='<div class="hd"><h2>Super dashboard</h2><button class="btn sm" onclick="newDay()">+ New day (today)</button></div><p class="sub">Tap a date on the calendar to open or create it. Averages use finished days only; sleep uses every night logged.</p><div class="grid">'+tile("Days logged",DAYS.length,dn.length+" finished, "+(DAYS.length-dn.length)+" in progress")+tile("Average calories",N(av(kc)),"kcal a day against "+N(T),av(kc)>MAX?"warn":"leaf")+tile("Average protein",F(av(pr))+" g","Goal "+F(PT)+"-"+F(PTH)+" g")+tile("Average water",F(av(ml)/1000)+" L","Goal "+F(P.waterL)+" L","sky")+tile("Average sleep",F(sl)+" h","Goal "+F(P.sleepLow)+"-"+F(P.sleepHigh)+" h")+tile("Days in calorie range",inr+" of "+dn.length,N(MIN)+"-"+N(MAX)+" kcal")+'</div>';
   h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Calories a day</h3><div class="lab">Line = '+N(T)+' target</div>';
   DAYS.forEach(function(d){var k=kc(d);h+=row(d.label,k,2600,k>MAX?"var(--warn)":"var(--leaf)",T,d.meals.length?N(k):"-")});
   h+='</div><div class="card"><h3>Protein a day</h3><div class="lab">Line = '+F(PT)+' g</div>';

@@ -16,6 +16,34 @@ nav a:focus-visible,.navsel:focus-visible{outline:2px solid var(--sky)}
 .dayswitch{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 14px}
 .dayswitch .lab{flex:0 0 auto;text-align:center}
 .btn.disabled,.btn[aria-disabled="true"]{opacity:.4;pointer-events:none}
+/* month calendar */
+.cal{padding:14px;margin:14px 0}
+.calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px}
+.calttl{font-weight:800;font-size:17px}
+.calnav{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+.calnav:hover{border-color:var(--sky)}
+.calnav:focus-visible{outline:2px solid var(--sky)}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.calgrid.dow{margin-bottom:6px}
+.caldow{text-align:center;font-size:12px;font-weight:700;color:var(--mute);padding:2px 0}
+.calcell{position:relative;aspect-ratio:1/1;min-height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:1px solid transparent;border-radius:12px;background:var(--track);color:var(--ink);font-weight:700;font-size:15px;cursor:pointer;transition:border-color .12s,transform .12s}
+.calcell.empty{background:transparent;border:0;cursor:default}
+.calcell:not(.empty):not(.future):hover{border-color:var(--sky)}
+.calcell:not(.empty):not(.future):active{transform:scale(.94)}
+.calcell:focus-visible{outline:2px solid var(--sky);outline-offset:1px}
+.calcell.future{opacity:.3;cursor:default}
+.calcell.done{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+.calcell.prog{background:color-mix(in srgb,var(--sun) 20%,transparent);border-color:var(--sun)}
+.calcell.today{outline:2px solid var(--sky);outline-offset:1px}
+.caldot{height:12px;display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1}
+.caldot.prog{width:6px;height:6px;border-radius:50%;background:var(--sun);align-self:center}
+.caldot.done{color:#fff;font-size:10px;font-weight:900}
+.callegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:12px;color:var(--mute)}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg b{width:14px;height:14px;border-radius:5px;display:inline-block}
+.lg.done b{background:var(--leaf)}
+.lg.prog b{background:color-mix(in srgb,var(--sun) 25%,transparent);border:1px solid var(--sun)}
+.lg.today b{background:transparent;box-shadow:0 0 0 2px var(--sky) inset}
 header{padding:34px 0 8px}
 header h1{font-size:clamp(32px,5.5vw,58px);font-weight:800;letter-spacing:-.03em}
 header p{color:var(--mute);margin:10px 0 0;max-width:40em}
