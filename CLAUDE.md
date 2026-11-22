@@ -34,10 +34,12 @@ public/
 functions/api/
   _utils.js   json(), bad(), body(), ensureDay() helpers (not routed; "_" prefix)
   days.js     GET    all days, shaped like the old DAYS array
-  water.js    POST   { day_id, time, ml }
+  water.js    POST   { day_id, time, ml }   | { id, ml } edits an entry's amount
   meal.js     POST   { day_id, time, slot, name, items:[{name,portion,kcal,protein,carbs,fat}] }
               (meal totals are derived from items; meal-level protein/carbs/fat
                columns are kept only for older rows)
+              With { meal_id, ... } it edits that meal in place: keeps the meal
+              id and its timeline event, replaces the fields and all items.
   sleep.js    POST   { day_id, hours, note }
   walk.js     POST   { day_id, km, kcal }
   day.js      POST   { day_id, done?, note? }   also creates today's page

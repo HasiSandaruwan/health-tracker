@@ -100,7 +100,7 @@ function addBar(d){
     + '<button class="btn sm ghost" onclick="addDrink(\''+id+'\',\'Soft drink\',\'1 can, 330 ml\',140)">+ Soft drink</button></div>';
   // Toggle buttons
   h+='<div class="btnrow" style="margin-top:12px">'
-    + '<button class="btn ghost sm" onclick="toggle(\'f-meal\')">+ Meal</button>'
+    + '<button class="btn ghost sm" onclick="newMeal(\''+id+'\')">+ Meal</button>'
     + '<button class="btn ghost sm" onclick="toggle(\'f-sleep\')">+ Sleep</button>'
     + '<button class="btn ghost sm" onclick="toggle(\'f-walk\')">+ Walk</button>'
     + '<button class="btn ghost sm" onclick="toggle(\'f-note\')">+ Note</button>'
@@ -117,9 +117,10 @@ function addBar(d){
     + '<div class="field"><label>Time</label><input id="mealTime" value="'+nowLabel()+'"></div>'
     + '<div class="field"><label>Meal name (optional)</label><input id="mealName" placeholder="e.g. Lunch"></div>'
     + '</div>'
+    + '<div class="lab" id="mealEditNote" style="margin-top:4px;color:var(--sun)"></div>'
     + '<div class="lab" style="margin-top:10px">Items (protein, carbs and fat are added up from the items below)</div><div id="mealItems"></div>'
     + '<div class="btnrow"><button class="btn ghost sm" onclick="addItemRow()">+ Add item</button>'
-    + '<button class="btn sm" onclick="saveMeal(\''+id+'\')">Save meal</button></div></div>';
+    + '<button class="btn sm" id="mealSaveBtn" onclick="saveMeal(\''+id+'\')">Save meal</button></div></div>';
 
   // Sleep form
   h+='<div id="f-sleep" class="hidden" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">'
@@ -144,14 +145,16 @@ function addBar(d){
   h+='</div>';
   return h;
 }
-function itemRowHTML(){
+function itemRowHTML(it){
+  it=it||[];
+  function v(x){return x==null?"":String(x).replace(/"/g,"&quot;")}
   return '<div class="itemrow">'
-    + '<div class="field"><label>Item</label><input class="it-name" placeholder="Red rice"></div>'
-    + '<div class="field"><label>Portion</label><input class="it-portion" placeholder="1 cup"></div>'
-    + '<div class="field"><label>kcal</label><input class="it-kcal" type="number" inputmode="numeric"></div>'
-    + '<div class="field"><label>Protein g</label><input class="it-protein" type="number" inputmode="decimal" step="any"></div>'
-    + '<div class="field"><label>Carbs g</label><input class="it-carbs" type="number" inputmode="decimal" step="any"></div>'
-    + '<div class="field"><label>Fat g</label><input class="it-fat" type="number" inputmode="decimal" step="any"></div>'
+    + '<div class="field"><label>Item</label><input class="it-name" placeholder="Red rice" value="'+v(it[0])+'"></div>'
+    + '<div class="field"><label>Portion</label><input class="it-portion" placeholder="1 cup" value="'+v(it[1])+'"></div>'
+    + '<div class="field"><label>kcal</label><input class="it-kcal" type="number" inputmode="numeric" value="'+v(it[2])+'"></div>'
+    + '<div class="field"><label>Protein g</label><input class="it-protein" type="number" inputmode="decimal" step="any" value="'+v(it[3])+'"></div>'
+    + '<div class="field"><label>Carbs g</label><input class="it-carbs" type="number" inputmode="decimal" step="any" value="'+v(it[4])+'"></div>'
+    + '<div class="field"><label>Fat g</label><input class="it-fat" type="number" inputmode="decimal" step="any" value="'+v(it[5])+'"></div>'
     + '<button class="del" title="Remove item" onclick="this.closest(\'.itemrow\').remove()">×</button>'
     + '</div>';
 }
@@ -166,6 +169,51 @@ window.addItemRow=function(){
   var c=document.getElementById("mealItems");if(!c)return;
   c.insertAdjacentHTML("beforeend",itemRowHTML());
 };
+function resetMealForm(id){
+  var el=document.getElementById("f-meal");if(!el)return;
+  el.dataset.editId="";
+  var s=document.getElementById("mealSlot");if(s)s.value="Snack";
+  var t=document.getElementById("mealTime");if(t)t.value=nowLabel();
+  var n=document.getElementById("mealName");if(n)n.value="";
+  var c=document.getElementById("mealItems");if(c)c.innerHTML="";
+  addItemRow();
+  var btn=document.getElementById("mealSaveBtn");if(btn)btn.textContent="Save meal";
+  var note=document.getElementById("mealEditNote");if(note)note.textContent="";
+}
+window.newMeal=function(id){
+  var el=document.getElementById("f-meal");if(!el)return;
+  var willOpen=el.classList.contains("hidden");
+  el.classList.toggle("hidden");
+  if(willOpen)resetMealForm(id);
+};
+window.editMeal=function(mealId){
+  var meal=null;
+  for(var i=0;i<DAYS.length&&!meal;i++){
+    var mm=DAYS[i].meals.filter(function(m){return m.id===mealId});
+    if(mm.length)meal=mm[0];
+  }
+  if(!meal){alert("Could not find that meal.");return;}
+  var el=document.getElementById("f-meal");if(!el)return;
+  el.classList.remove("hidden");
+  el.dataset.editId=String(mealId);
+  var s=document.getElementById("mealSlot");if(s)s.value=meal.slot;
+  document.getElementById("mealTime").value=meal.t||nowLabel();
+  document.getElementById("mealName").value=(meal.name&&meal.name!==meal.slot)?meal.name:"";
+  var c=document.getElementById("mealItems");c.innerHTML="";
+  (meal.items||[]).forEach(function(it){c.insertAdjacentHTML("beforeend",itemRowHTML(it))});
+  if(!c.querySelector(".itemrow"))addItemRow();
+  var btn=document.getElementById("mealSaveBtn");if(btn)btn.textContent="Update meal";
+  var note=document.getElementById("mealEditNote");if(note)note.textContent="Editing “"+(meal.name||meal.slot)+"” — change anything and tap Update meal.";
+  el.scrollIntoView({behavior:"smooth",block:"center"});
+};
+window.editWater=function(eid,cur){act(async function(){
+  var v=prompt("Water amount in ml",cur);
+  if(v===null)return;
+  v=parseInt(v,10);
+  if(!v||v<=0){alert("Enter a positive number of ml.");return;}
+  await send("water","POST",{id:eid,ml:v});
+  await refresh();
+})};
 async function act(fn){
   try{ await fn(); }
   catch(e){ console.error(e); alert("Could not save: "+e.message); }
@@ -200,13 +248,16 @@ window.saveMeal=function(id){act(async function(){
     });
   });
   if(!items.length){alert("Add at least one item (name and kcal).");return;}
-  await send("meal","POST",{
+  var editId=document.getElementById("f-meal").dataset.editId;
+  var payload={
     day_id:id,
     slot:document.getElementById("mealSlot").value,
     time:document.getElementById("mealTime").value.trim()||nowLabel(),
     name:document.getElementById("mealName").value.trim(),
     items:items
-  });
+  };
+  if(editId)payload.meal_id=parseInt(editId,10);
+  await send("meal","POST",payload);
   await refresh();
 })};
 window.saveSleep=function(id){act(async function(){
@@ -272,7 +323,7 @@ function dayView(d){
   h+='<h2>Meals in detail</h2>';
   if(!d.meals.length)h+='<div class="card lab">No meals logged yet. Use "+ Meal" above.</div>';
   d.meals.forEach(function(m){var t=m.items.reduce(function(a,i){return a+i[2]},0);
-    h+='<div class="card" style="margin-bottom:12px"><div class="hd"><h3>'+esc(m.name)+'</h3><span class="lab">'+esc(m.t)+'</span>'+(m.id!=null?'<button class="del meal-del" title="Delete meal" onclick="delMeal('+m.id+')">×</button>':'')+'</div><div class="chips"><span class="pill">'+N(t)+' kcal</span><span class="pill">'+F(m.p||0)+' g protein</span>'+(m.c!=null?'<span class="pill">'+F(m.c)+' g carbs</span>':'')+(m.f!=null?'<span class="pill">'+F(m.f)+' g fat</span>':'')+'</div><div class="tb"><table><tr><th>Item</th><th>Portion</th><th>kcal</th><th>Protein</th><th>Carbs</th><th>Fat</th></tr>';
+    h+='<div class="card" style="margin-bottom:12px"><div class="hd"><h3>'+esc(m.name)+'</h3><span class="lab">'+esc(m.t)+'</span>'+(m.id!=null?'<button class="btn ghost sm" title="Edit meal" onclick="editMeal('+m.id+')">Edit</button><button class="del meal-del" title="Delete meal" onclick="delMeal('+m.id+')">×</button>':'')+'</div><div class="chips"><span class="pill">'+N(t)+' kcal</span><span class="pill">'+F(m.p||0)+' g protein</span>'+(m.c!=null?'<span class="pill">'+F(m.c)+' g carbs</span>':'')+(m.f!=null?'<span class="pill">'+F(m.f)+' g fat</span>':'')+'</div><div class="tb"><table><tr><th>Item</th><th>Portion</th><th>kcal</th><th>Protein</th><th>Carbs</th><th>Fat</th></tr>';
     m.items.forEach(function(i){h+='<tr><td>'+esc(i[0])+'</td><td>'+esc(i[1])+'</td><td>'+i[2]+'</td><td>'+(i[3]!=null?i[3]+' g':'')+'</td><td>'+(i[4]!=null?i[4]+' g':'')+'</td><td>'+(i[5]!=null?i[5]+' g':'')+'</td></tr>'});
     h+='</table></div></div>'});
   h+='<h2>Timeline</h2>';
@@ -283,7 +334,7 @@ function dayView(d){
       if(c==="w"){x="Water, "+e[2]+" ml"}
       else if(c==="m"){var m=d.meals[e[2]];x=(m?esc(m.name)+": about "+N(m.items.reduce(function(a,i){return a+i[2]},0))+" kcal, "+F(m.p||0)+" g protein":"Meal")}
       else x=esc(e[2]);
-      h+='<li class="'+(c==="w"?"water":c==="m"?"meal":c==="a"?"act":"")+'"><div class="hd"><div><b>'+esc(e[0])+'</b>'+x+'</div>'+(eid!=null?'<button class="del" title="Delete entry" onclick="delEvent('+eid+')">×</button>':'')+'</div></li>'});
+      h+='<li class="'+(c==="w"?"water":c==="m"?"meal":c==="a"?"act":"")+'"><div class="hd"><div><b>'+esc(e[0])+'</b>'+x+'</div>'+(eid!=null?(c==="w"?'<button class="del" title="Edit amount" onclick="editWater('+eid+','+e[2]+')">✎</button>':'')+'<button class="del" title="Delete entry" onclick="delEvent('+eid+')">×</button>':'')+'</div></li>'});
     h+='</ul>';
   }
   h+='<h2>Notes</h2>';
