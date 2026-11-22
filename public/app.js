@@ -302,11 +302,16 @@ window.delNote=function(id,idx){act(async function(){
   await refresh();
 })};
 window.newDay=function(){act(async function(){
-  var id=todayId();
+  var el=document.getElementById("newDayDate");
+  var id=(el&&el.value)?el.value:todayId();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(id)){alert("Pick a valid date.");return;}
+  if(id>todayId()){alert("That date is in the future.");return;}
+  var existed=DAYS.some(function(d){return d.id===id});
   await send("day","POST",{day_id:id});
   await load();
   location.hash="#day-"+id;
   render();
+  if(existed)alert("That day already exists — opened it.");
 })};
 
 /* ---------- day page ---------- */
@@ -348,11 +353,11 @@ function overview(){
   if(!DAYS.length){
     return '<h2>Super dashboard</h2><p class="sub">No days logged yet.</p>'
       + '<div class="card"><h3>Start tracking</h3><div class="lab">Create today’s page, then add water, meals, sleep and your walk.</div>'
-      + '<div class="btnrow" style="margin-top:10px"><button class="btn" onclick="newDay()">+ New day (today)</button></div></div>';
+      + '<div class="btnrow" style="margin-top:10px"><input type="date" id="newDayDate" class="dateinput" value="'+todayId()+'" max="'+todayId()+'"><button class="btn" onclick="newDay()">+ New day</button></div></div>';
   }
   var dn=DAYS.filter(function(d){return d.done}),av=function(f){return dn.length?dn.reduce(function(a,d){return a+f(d)},0)/dn.length:0},h='';
   var sl=DAYS.length?DAYS.reduce(function(a,d){return a+d.sleep.h},0)/DAYS.length:0,inr=dn.filter(function(d){var k=kc(d);return k>=MIN&&k<=MAX}).length;
-  h+='<div class="hd"><h2>Super dashboard</h2><button class="btn sm" onclick="newDay()">+ New day</button></div><p class="sub">Every logged day side by side. Averages use finished days only; sleep uses every night logged.</p><div class="grid">'+tile("Days logged",DAYS.length,dn.length+" finished, "+(DAYS.length-dn.length)+" in progress")+tile("Average calories",N(av(kc)),"kcal a day against "+N(T),av(kc)>MAX?"warn":"leaf")+tile("Average protein",F(av(pr))+" g","Goal "+F(PT)+"-"+F(PTH)+" g")+tile("Average water",F(av(ml)/1000)+" L","Goal "+F(P.waterL)+" L","sky")+tile("Average sleep",F(sl)+" h","Goal "+F(P.sleepLow)+"-"+F(P.sleepHigh)+" h")+tile("Days in calorie range",inr+" of "+dn.length,N(MIN)+"-"+N(MAX)+" kcal")+'</div>';
+  h+='<div class="hd"><h2>Super dashboard</h2><div class="btnrow"><input type="date" id="newDayDate" class="dateinput" value="'+todayId()+'" max="'+todayId()+'"><button class="btn sm" onclick="newDay()">+ New day</button></div></div><p class="sub">Every logged day side by side. Averages use finished days only; sleep uses every night logged.</p><div class="grid">'+tile("Days logged",DAYS.length,dn.length+" finished, "+(DAYS.length-dn.length)+" in progress")+tile("Average calories",N(av(kc)),"kcal a day against "+N(T),av(kc)>MAX?"warn":"leaf")+tile("Average protein",F(av(pr))+" g","Goal "+F(PT)+"-"+F(PTH)+" g")+tile("Average water",F(av(ml)/1000)+" L","Goal "+F(P.waterL)+" L","sky")+tile("Average sleep",F(sl)+" h","Goal "+F(P.sleepLow)+"-"+F(P.sleepHigh)+" h")+tile("Days in calorie range",inr+" of "+dn.length,N(MIN)+"-"+N(MAX)+" kcal")+'</div>';
   h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Calories a day</h3><div class="lab">Line = '+N(T)+' target</div>';
   DAYS.forEach(function(d){var k=kc(d);h+=row(d.label,k,2600,k>MAX?"var(--warn)":"var(--leaf)",T,d.meals.length?N(k):"-")});
   h+='</div><div class="card"><h3>Protein a day</h3><div class="lab">Line = '+F(PT)+' g</div>';
