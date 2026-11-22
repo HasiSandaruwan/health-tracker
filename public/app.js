@@ -318,6 +318,15 @@ window.newDay=function(){act(async function(){
 function dayView(d){
   var k=kc(d),p=pr(d),w=ml(d),s=st(d,k),diff=k-T,h='';
   h+='<div class="hd"><h2>'+esc(d.full)+'</h2><span class="pill '+s[1]+'">'+s[0]+'</span></div>';
+  // Step between days in date order (older ‹ › newer).
+  var ds=DAYS.slice().sort(function(a,b){return a.id<b.id?-1:1}),idx=0;
+  for(var i=0;i<ds.length;i++){if(ds[i].id===d.id){idx=i;break;}}
+  var prev=idx>0?ds[idx-1]:null,next=idx<ds.length-1?ds[idx+1]:null;
+  h+='<div class="dayswitch">'
+    + (prev?'<a class="btn ghost sm" href="#day-'+prev.id+'" title="'+esc(prev.full)+'">‹ '+esc(prev.label)+'</a>':'<span class="btn ghost sm disabled">‹ Earliest</span>')
+    + '<span class="lab">Day '+(idx+1)+' of '+ds.length+'</span>'
+    + (next?'<a class="btn ghost sm" href="#day-'+next.id+'" title="'+esc(next.full)+'">'+esc(next.label)+' ›</a>':'<span class="btn ghost sm disabled">Latest ›</span>')
+    + '</div>';
   h+=addBar(d);
   h+='<div class="grid">'+tile("Calories eaten",N(k),d.meals.length?(diff>0?N(diff)+" over the "+N(T)+" target":N(-diff)+" left to "+N(T)):"Nothing logged yet",k>MAX?"warn":"")+tile("Protein",F(p)+" g",p>=PT?"Target of "+F(PT)+"-"+F(PTH)+" g reached":F(PT-p)+" g to reach "+F(PT)+" g")+tile("Water",F(w/GL),F(w/1000)+" litres of "+F(P.waterL)+", in glasses of "+N(GL)+" ml","sky")+tile("Sleep before",F(d.sleep.h)+" h","Goal "+F(P.sleepLow)+"-"+F(P.sleepHigh)+" h",d.sleep.h<P.sleepLow?"warn":"leaf")+tile("Walk",d.walk?d.walk.km+" km":"None yet",d.walk?"About "+d.walk.kcal+" kcal burned":"Goal: "+F(P.walkKm)+" km a day")+'</div>';
   h+='<div class="g2" style="margin-top:14px"><div class="card"><h3>Calories</h3>'+ring(k)+'<div class="lab" style="text-align:center;margin-top:8px">Range '+N(MIN)+'-'+N(MAX)+' kcal</div></div>';
@@ -432,7 +441,15 @@ function plan(){
 /* ---------- router ---------- */
 function render(){
   var hs=(location.hash||"#overview").slice(1),h="";
-  var tabs='<a href="#overview" class="'+(hs==="overview"?"on":"")+'">Super dashboard</a>'+DAYS.map(function(d){return'<a href="#day-'+d.id+'" class="'+(hs==="day-"+d.id?"on":"")+'">'+d.label+'</a>'}).join("")+'<a href="#plan" class="'+(hs==="plan"?"on":"")+'">Plan and profile</a>';
+  var curDay=hs.indexOf("day-")===0?hs.slice(4):"";
+  // Days are navigated through a single dropdown (newest first) so the nav bar
+  // stays the same size no matter how many days are logged.
+  var sorted=DAYS.slice().sort(function(a,b){return a.id<b.id?1:-1});
+  var sel='<select id="daySelect" class="navsel'+(curDay?" on":"")+'" aria-label="Jump to a logged day" onchange="if(this.value)location.hash=this.value">';
+  sel+='<option value="">'+(sorted.length?"Days ("+sorted.length+") ▾":"No days yet")+'</option>';
+  sorted.forEach(function(d){sel+='<option value="#day-'+d.id+'"'+(d.id===curDay?' selected':'')+'>'+d.label+(d.done?"":" • in progress")+'</option>'});
+  sel+='</select>';
+  var tabs='<a href="#overview" class="'+(hs==="overview"?"on":"")+'">Super dashboard</a>'+sel+'<a href="#plan" class="'+(hs==="plan"?"on":"")+'">Plan and profile</a>';
   $("#tabs").innerHTML=tabs;
   var d=DAYS.filter(function(x){return"day-"+x.id===hs})[0];
   $("#main").innerHTML=hs==="plan"?plan():d?dayView(d):overview();

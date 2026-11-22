@@ -7,10 +7,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 "DM Sans",
 h1,h2,h3{font-family:"Bricolage Grotesque","DM Sans",sans-serif;line-height:1.1;margin:0}
 .wrap{max-width:1040px;margin:0 auto;padding:0 20px}
 nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-nav .wrap{display:flex;gap:8px;overflow-x:auto;padding-top:10px;padding-bottom:10px;white-space:nowrap}
+nav .wrap{display:flex;gap:8px;align-items:center;overflow-x:auto;padding-top:10px;padding-bottom:10px;white-space:nowrap}
 nav a{color:var(--mute);text-decoration:none;font-weight:700;font-size:15px;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);cursor:pointer}
 nav a.on{background:var(--leaf);border-color:var(--leaf);color:#fff}
-nav a:focus-visible{outline:2px solid var(--sky)}
+nav a:focus-visible,.navsel:focus-visible{outline:2px solid var(--sky)}
+.navsel{width:auto;flex:0 0 auto;font-weight:700;font-size:15px;line-height:1.3;padding:7px 32px 7px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--mute);cursor:pointer}
+.navsel.on{background:var(--leaf);border-color:var(--leaf);color:#fff}
+.dayswitch{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 14px}
+.dayswitch .lab{flex:0 0 auto;text-align:center}
+.btn.disabled,.btn[aria-disabled="true"]{opacity:.4;pointer-events:none}
 header{padding:34px 0 8px}
 header h1{font-size:clamp(32px,5.5vw,58px);font-weight:800;letter-spacing:-.03em}
 header p{color:var(--mute);margin:10px 0 0;max-width:40em}
